@@ -114,6 +114,42 @@ export default function UploadGridTabs() {
         else if (activeTab === "Tasks") setRowData(allTasks);
     }, [activeTab, allClients, allWorkers, allTasks]);
 
+    const defaultColDef = {
+        flex: 1,
+        editable: true,
+        resizable: true,
+        cellClassRules: {
+            'cell-error': (params) => {
+                const errors = validationErrors[activeTab] || [];
+
+                // Make sure we have valid params
+                if (!params.node || !params.colDef) {
+                    return false;
+                }
+
+                const hasError = errors.some(
+                    (err) => err.rowIndex === params.node.rowIndex && err.field === params.colDef.field
+                );
+
+                // Debug logging (remove after fixing)
+                if (hasError) {
+                    console.log('Error found for cell:', {
+                        rowIndex: params.node.rowIndex,
+                        field: params.colDef.field,
+                        activeTab,
+                        errorDetails: errors.filter(err => err.rowIndex === params.node.rowIndex && err.field === params.colDef.field)
+                    });
+                }
+
+                return hasError;
+            }
+        }
+    };
+    useEffect(() => {
+        console.log("Validation Errors:", validationErrors);
+    }), [validationErrors, activeTab, allClients, allWorkers, allTasks, activeTab];
+
+
     return (
         <div className="w-full mt-4">
             {/* Tabs */}
@@ -154,26 +190,28 @@ export default function UploadGridTabs() {
                         rowData={rowData}
                         columnDefs={columnDefs[activeTab]}
                         theme="legacy"
-                        defaultColDef={{ flex: 1, editable: true, resizable: true }}
-                        getCellClass={(params: any) => {
-                            const errors = validationErrors[activeTab] || [];
-                            const hasError = errors.some(
-                                (err) => err.rowIndex === params.node.rowIndex && err.field === params.colDef.field
-                            );
-                            return hasError ? "cell-error" : "";
-                        }}
+                        defaultColDef={defaultColDef}
+
+
+
                     />
                 )}
             </div>
 
 
 
+            {/* Updated CSS with higher specificity */}
             <style jsx global>{`
-        .cell-error {
-          background-color: #ffe4e6 !important;
-          border: 1px solid #f87171 !important;
-        }
-      `}</style>
+                .ag-theme-alpine .ag-cell.cell-error {
+                    background-color: #ffe4e6 !important;
+                    border: 1px solid #f87171 !important;
+                }
+                
+                .ag-theme-alpine .ag-cell.cell-error.ag-cell-focus {
+                    background-color: #ffe4e6 !important;
+                    border: 1px solid #f87171 !important;
+                }
+            `}</style>
         </div>
     );
 }
